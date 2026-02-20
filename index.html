@@ -149,16 +149,19 @@
   /* ── Mobile ── */
   @media (max-width: 600px) {
     .slide-card {
+      position: fixed !important;
       width: min(340px, 90vw);
       padding: 18px 20px;
-      top: auto;
-      bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+      top: auto !important;
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
       left: 50% !important;
       right: auto !important;
-      transform: translateX(-50%) translateY(20px) !important;
+      transform: translateX(-50%) translateY(16px) !important;
+      opacity: 0 !important;
     }
     .slide-card.visible {
       transform: translateX(-50%) translateY(0) !important;
+      opacity: 1 !important;
     }
     .slide-card h2 { font-size: 18px; margin-bottom: 5px; }
     .slide-card p { font-size: 12.5px; line-height: 1.45; }
