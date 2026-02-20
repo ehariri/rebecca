@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roller Coaster Presentation</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  #c { display: block; width: 100vw; height: 100vh; }
+
+  /* ── Slide overlay (fixed on screen, not in 3D) ── */
+  #slide-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 80;
+  }
+  .slide-card {
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    width: min(480px, 85vw);
+    padding: 36px 40px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    color: #fff;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.08) inset;
+    position: absolute;
+    top: 50%;
+  }
+  .slide-card.side-left {
+    left: 5vw;
+    transform: translateY(-50%) translateX(-30px);
+  }
+  .slide-card.side-right {
+    right: 5vw;
+    transform: translateY(-50%) translateX(30px);
+  }
+  .slide-card.visible {
+    opacity: 1;
+  }
+  .slide-card.side-left.visible {
+    transform: translateY(-50%) translateX(0);
+  }
+  .slide-card.side-right.visible {
+    transform: translateY(-50%) translateX(0);
+  }
+  .slide-card .accent {
+    display: inline-block;
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    margin-bottom: 12px;
+  }
+  .slide-card h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .slide-card p {
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.88);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .slide-card .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    opacity: 0.65;
+  }
+
+  /* ── UI overlay ── */
+  #ui {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding-bottom: 24px; pointer-events: none; z-index: 100;
+  }
+  #slide-counter {
+    font-size: 13px; color: rgba(255,255,255,0.7);
+    margin-bottom: 10px; font-variant-numeric: tabular-nums;
+    letter-spacing: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  #progress {
+    display: flex; gap: 10px; pointer-events: auto;
+  }
+  #progress .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: all 0.35s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  #progress .dot.active {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255,255,255,0.6);
+    transform: scale(1.3);
+  }
+
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.75);
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s; z-index: 100; pointer-events: auto;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .nav-arrow:hover { background: rgba(255,255,255,0.25); color: #fff; }
+  #nav-prev { left: 20px; }
+  #nav-next { right: 20px; }
+
+  #hint {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.85);
+    font-size: 17px; text-align: center;
+    pointer-events: none; z-index: 200;
+    transition: opacity 1s ease;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    line-height: 1.8;
+    background: rgba(0,0,0,0.2);
+    padding: 24px 36px;
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+  }
+  #hint span { display: block; font-size: 13px; opacity: 0.6; margin-top: 6px; }
+
+  #speed-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none; z-index: 50; opacity: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.06) 100%);
+  }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.172.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.172.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="speed-overlay"></div>
+
+<!-- Slide content as fixed screen overlay -->
+<div id="slide-overlay"></div>
+
+<div id="ui">
+  <div id="slide-counter">1 / 10</div>
+  <div id="progress"></div>
+</div>
+
+<button class="nav-arrow" id="nav-prev">&#8592;</button>
+<button class="nav-arrow" id="nav-next">&#8594;</button>
+
+<div id="hint">
+  Click anywhere or press <b>Space</b> to ride<span>Arrow keys &middot; Number keys 1-0 &middot; Click dots</span>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ── GSAP load ──
+await new Promise(resolve => {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js';
+  s.onload = resolve;
+  document.head.appendChild(s);
+});
+
+// ═══════════════════════════════════
+//  SLIDE DATA
+// ═══════════════════════════════════
+const slides = [
+  { title: 'Welcome Aboard', body: 'Strap in for a ride through ideas. Each station reveals something new. Enjoy the journey.', tag: 'Station 1', color: '#6C63FF' },
+  { title: 'The Big Climb', body: 'Every great idea starts with a slow, deliberate ascent. Patience builds the foundation for what comes next.', tag: 'Station 2', color: '#FF6B6B' },
+  { title: 'First Drop', body: 'That moment of freefall when an insight clicks. The rush of seeing everything come together at once.', tag: 'Station 3', color: '#4ECDC4' },
+  { title: 'Sweeping Turn', body: 'Perspective shifts when you lean into the curve. The best ideas come from changing your angle of approach.', tag: 'Station 4', color: '#FFE66D' },
+  { title: 'Camelback Hills', body: "Progress isn't linear. It's a series of ups and downs, each peak a little higher than the last.", tag: 'Station 5', color: '#A8E6CF' },
+  { title: 'The Helix', body: 'Sometimes you circle the same problem from different heights until the solution spirals into view.', tag: 'Station 6', color: '#DDA0DD' },
+  { title: 'The Twist', body: 'Quick pivots and unexpected turns test your adaptability. The best teams thrive in chaos.', tag: 'Station 7', color: '#FF8C42' },
+  { title: 'Smooth Glide', body: "Take a breath. Reflection isn't idle — it's where lessons crystallize and next steps become clear.", tag: 'Station 8', color: '#87CEEB' },
+  { title: 'Bunny Hops', body: 'Small, playful experiments. Rapid prototypes. Quick wins that build momentum for the grand finale.', tag: 'Station 9', color: '#98D8C8' },
+  { title: 'Grand Finale', body: "Every ride ends at a station. What matters is the view you've gained and the courage to ride again.", tag: 'Station 10', color: '#F7DC6F' },
+];
+
+// ═══════════════════════════════════
+//  BUILD SLIDE CARDS (screen-space)
+// ═══════════════════════════════════
+const overlayEl = document.getElementById('slide-overlay');
+const slideCards = [];
+
+slides.forEach((slide, i) => {
+  const div = document.createElement('div');
+  div.className = 'slide-card ' + (i % 2 === 0 ? 'side-left' : 'side-right');
+  div.innerHTML = `
+    <div class="accent" style="background:${slide.color}"></div>
+    <div class="tag">${slide.tag}</div>
+    <h2>${slide.title}</h2>
+    <p>${slide.body}</p>
+  `;
+  overlayEl.appendChild(div);
+  slideCards.push(div);
+});
+
+// Show first slide
+slideCards[0].classList.add('visible');
+
+// ═══════════════════════════════════
+//  SCENE SETUP
+// ═══════════════════════════════════
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x9dc4e0, 0.0018);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 1500);
+
+// ═══════════════════════════════════
+//  LIGHTING (golden hour daytime)
+// ═══════════════════════════════════
+const ambientLight = new THREE.AmbientLight(0x8899bb, 1.0);
+scene.add(ambientLight);
+
+const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x556B2F, 0.9);
+scene.add(hemiLight);
+
+// Warm sun
+const sunLight = new THREE.DirectionalLight(0xffe4b5, 2.0);
+sunLight.position.set(100, 150, 80);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.set(2048, 2048);
+sunLight.shadow.camera.near = 10;
+sunLight.shadow.camera.far = 500;
+sunLight.shadow.camera.left = -250;
+sunLight.shadow.camera.right = 250;
+sunLight.shadow.camera.top = 250;
+sunLight.shadow.camera.bottom = -250;
+sunLight.shadow.bias = -0.001;
+scene.add(sunLight);
+
+// Fill light from opposite side
+const fillLight = new THREE.DirectionalLight(0xadd8e6, 0.5);
+fillLight.position.set(-80, 60, -40);
+scene.add(fillLight);
+
+// ═══════════════════════════════════
+//  SKY DOME (bright daytime)
+// ═══════════════════════════════════
+const skyGeo = new THREE.SphereGeometry(600, 32, 32);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: {
+    topColor:    { value: new THREE.Color(0x1a6fc4) },
+    horizonColor:{ value: new THREE.Color(0xa7d4f2) },
+    bottomColor: { value: new THREE.Color(0xe8d5b7) },
+    sunDir:      { value: new THREE.Vector3(0.5, 0.4, 0.3).normalize() },
+    sunColor:    { value: new THREE.Color(0xfff5e0) },
+  },
+  vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPos = wp.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 horizonColor;
+    uniform vec3 bottomColor;
+    uniform vec3 sunDir;
+    uniform vec3 sunColor;
+    varying vec3 vWorldPos;
+    void main() {
+      vec3 dir = normalize(vWorldPos);
+      float h = dir.y;
+
+      // Sky gradient
+      vec3 col;
+      if (h > 0.0) {
+        col = mix(horizonColor, topColor, pow(h, 0.5));
+      } else {
+        col = mix(horizonColor, bottomColor, pow(-h, 0.3));
+      }
+
+      // Sun glow
+      float sunDot = max(dot(dir, sunDir), 0.0);
+      col += sunColor * 0.4 * pow(sunDot, 32.0);  // tight sun disc
+      col += sunColor * 0.15 * pow(sunDot, 4.0);   // wide glow
+
+      // Soft clouds via noise-like pattern
+      float cloud = smoothstep(0.1, 0.5, h) * smoothstep(0.7, 0.3, h);
+      float pattern = fract(sin(dot(floor(dir.xz * 8.0), vec2(12.9898, 78.233))) * 43758.5453);
+      cloud *= smoothstep(0.55, 0.7, pattern) * 0.25;
+      col = mix(col, vec3(1.0), cloud);
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ═══════════════════════════════════
+//  GROUND (rolling green)
+// ═══════════════════════════════════
+const groundGeo = new THREE.PlaneGeometry(1400, 1400, 64, 64);
+// Add gentle hills
+const gPos = groundGeo.attributes.position;
+for (let i = 0; i < gPos.count; i++) {
+  const x = gPos.getX(i);
+  const y = gPos.getY(i);
+  const z = Math.sin(x * 0.01) * Math.cos(y * 0.012) * 3 +
+            Math.sin(x * 0.025 + 1.0) * Math.cos(y * 0.02) * 1.5;
+  gPos.setZ(i, z);
+}
+groundGeo.computeVertexNormals();
+
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x4a8c3f,
+  roughness: 0.9,
+  metalness: 0.0,
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// ═══════════════════════════════════
+//  TRACK CURVE
+// ═══════════════════════════════════
+const controlPoints = [
+  // Station 1 - Loading station (flat)
+  new THREE.Vector3(0, 5, 0),
+  new THREE.Vector3(10, 5, -3),
+  new THREE.Vector3(22, 5, -8),
+
+  // Station 2 - The Big Climb
+  new THREE.Vector3(35, 8, -15),
+  new THREE.Vector3(48, 18, -25),
+  new THREE.Vector3(56, 32, -36),
+  new THREE.Vector3(60, 46, -48),
+  new THREE.Vector3(62, 58, -58),
+
+  // Station 3 - First Drop
+  new THREE.Vector3(63, 60, -65),
+  new THREE.Vector3(62, 48, -74),
+  new THREE.Vector3(58, 28, -86),
+  new THREE.Vector3(52, 10, -100),
+  new THREE.Vector3(44, 6, -112),
+
+  // Station 4 - Sweeping Turn
+  new THREE.Vector3(34, 7, -120),
+  new THREE.Vector3(20, 9, -126),
+  new THREE.Vector3(2, 10, -128),
+  new THREE.Vector3(-14, 11, -122),
+  new THREE.Vector3(-26, 10, -112),
+
+  // Station 5 - Camelback Hills
+  new THREE.Vector3(-38, 7, -98),
+  new THREE.Vector3(-44, 20, -86),
+  new THREE.Vector3(-48, 7, -74),
+  new THREE.Vector3(-50, 22, -62),
+  new THREE.Vector3(-50, 7, -50),
+
+  // Station 6 - The Helix
+  new THREE.Vector3(-46, 12, -40),
+  new THREE.Vector3(-36, 20, -34),
+  new THREE.Vector3(-28, 26, -40),
+  new THREE.Vector3(-30, 32, -50),
+  new THREE.Vector3(-38, 36, -54),
+  new THREE.Vector3(-48, 40, -48),
+  new THREE.Vector3(-46, 44, -36),
+
+  // Station 7 - The Twist
+  new THREE.Vector3(-38, 40, -24),
+  new THREE.Vector3(-28, 36, -16),
+  new THREE.Vector3(-18, 32, -24),
+  new THREE.Vector3(-10, 28, -14),
+  new THREE.Vector3(-2, 24, -22),
+
+  // Station 8 - Smooth Glide
+  new THREE.Vector3(10, 22, -18),
+  new THREE.Vector3(24, 20, -12),
+  new THREE.Vector3(40, 18, -6),
+  new THREE.Vector3(55, 16, 0),
+
+  // Station 9 - Bunny Hops
+  new THREE.Vector3(62, 12, 8),
+  new THREE.Vector3(66, 20, 16),
+  new THREE.Vector3(68, 10, 24),
+  new THREE.Vector3(66, 18, 32),
+  new THREE.Vector3(62, 9, 40),
+
+  // Station 10 - Grand Finale
+  new THREE.Vector3(54, 7, 48),
+  new THREE.Vector3(42, 6, 52),
+  new THREE.Vector3(28, 5.5, 50),
+  new THREE.Vector3(14, 5, 44),
+  new THREE.Vector3(4, 5, 36),
+];
+
+const curve = new THREE.CatmullRomCurve3(controlPoints, false, 'catmullrom', 0.35);
+
+// Station t-values
+const stationTs = [
+  0.000,  // 1 - Loading
+  0.115,  // 2 - Big Climb
+  0.200,  // 3 - First Drop
+  0.320,  // 4 - Sweeping Turn
+  0.425,  // 5 - Camelback Hills
+  0.545,  // 6 - Helix
+  0.645,  // 7 - Twist
+  0.745,  // 8 - Smooth Glide
+  0.845,  // 9 - Bunny Hops
+  0.955,  // 10 - Grand Finale
+];
+
+const segmentConfig = [
+  { ease: 'power2.inOut', durationScale: 1.0 },
+  { ease: 'power3.out',   durationScale: 1.6 },
+  { ease: 'power3.in',    durationScale: 0.7 },
+  { ease: 'power2.inOut', durationScale: 1.1 },
+  { ease: 'power1.inOut', durationScale: 1.0 },
+  { ease: 'power2.inOut', durationScale: 1.3 },
+  { ease: 'power2.in',    durationScale: 0.8 },
+  { ease: 'none',         durationScale: 1.2 },
+  { ease: 'power1.inOut', durationScale: 0.9 },
+  { ease: 'power3.out',   durationScale: 1.4 },
+];
+
+// ═══════════════════════════════════
+//  TRACK VISUALS
+// ═══════════════════════════════════
+const railRadius = 0.18;
+const railSegments = 600;
+const railOffset = 1.0;
+
+function buildRail(offsetDir) {
+  const points = [];
+  for (let i = 0; i <= railSegments; i++) {
+    const t = i / railSegments;
+    const pos = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
+    points.push(pos.clone().add(right.multiplyScalar(offsetDir * railOffset)));
+  }
+  const railCurve = new THREE.CatmullRomCurve3(points, false);
+  const geo = new THREE.TubeGeometry(railCurve, railSegments, railRadius, 6, false);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xcc3333,
+    metalness: 0.6,
+    roughness: 0.35
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  return mesh;
+}
+
+scene.add(buildRail(1));
+scene.add(buildRail(-1));
+
+// Cross-ties — oriented via track-local basis (tangent/right/trackUp)
+const tieCount = 250;
+const tieGeo = new THREE.BoxGeometry(1, 1, 1); // unit box, scaled by matrix
+const tieMat = new THREE.MeshStandardMaterial({ color: 0x6b5b4a, roughness: 0.85 });
+const tiesMesh = new THREE.InstancedMesh(tieGeo, tieMat, tieCount);
+tiesMesh.castShadow = true;
+
+const _m4 = new THREE.Matrix4();
+const _up = new THREE.Vector3(0, 1, 0);
+const _basisM = new THREE.Matrix4();
+
+for (let i = 0; i < tieCount; i++) {
+  const t = i / tieCount;
+  const pos = curve.getPointAt(t);
+  const tangent = curve.getTangentAt(t).normalize();
+
+  // Build track-local frame
+  const right = new THREE.Vector3().crossVectors(tangent, _up).normalize();
+  const trackUp = new THREE.Vector3().crossVectors(right, tangent).normalize();
+
+  // Basis: tie X-axis → right (across rails), Y-axis → trackUp, Z-axis → tangent
+  // Then scale: X=2.4 (width across rails), Y=0.12 (thickness), Z=0.2 (depth along track)
+  _basisM.makeBasis(right, trackUp, tangent);
+
+  const scaleM = new THREE.Matrix4().makeScale(2.4, 0.12, 0.2);
+  _m4.copy(_basisM).multiply(scaleM);
+
+  // Position: on track centerline, lowered to sit under the rails
+  const tiePos = pos.clone();
+  tiePos.addScaledVector(trackUp, -railRadius - 0.06);
+  _m4.setPosition(tiePos);
+
+  tiesMesh.setMatrixAt(i, _m4);
+}
+tiesMesh.instanceMatrix.needsUpdate = true;
+scene.add(tiesMesh);
+
+// Support pillars — vertical columns from ground to track underside
+const pillarCount = 100;
+const pillarGeo = new THREE.CylinderGeometry(0.15, 0.22, 1, 6);
+const pillarMat = new THREE.MeshStandardMaterial({ color: 0x778899, metalness: 0.4, roughness: 0.6 });
+const pillarsMesh = new THREE.InstancedMesh(pillarGeo, pillarMat, pillarCount);
+pillarsMesh.castShadow = true;
+
+const _pillarQ = new THREE.Quaternion();
+for (let i = 0; i < pillarCount; i++) {
+  const t = i / pillarCount;
+  const pos = curve.getPointAt(t);
+  const groundY = -2;
+  const height = pos.y - groundY - 0.3;
+  if (height < 2.5) {
+    // Hide pillars that are too short
+    _m4.compose(new THREE.Vector3(0, -1000, 0), _pillarQ, new THREE.Vector3(0.001, 0.001, 0.001));
+  } else {
+    const center = new THREE.Vector3(pos.x, groundY + height / 2, pos.z);
+    _m4.compose(center, _pillarQ, new THREE.Vector3(1, height, 1));
+  }
+  pillarsMesh.setMatrixAt(i, _m4);
+}
+pillarsMesh.instanceMatrix.needsUpdate = true;
+scene.add(pillarsMesh);
+
+// ═══════════════════════════════════
+//  TREES (varied, lush)
+// ═══════════════════════════════════
+const rng = (seed) => { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+const rand = rng(42);
+
+const treeCount = 300;
+const trunkGeo = new THREE.CylinderGeometry(0.25, 0.45, 4, 6);
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3d20, roughness: 0.9 });
+const trunksMesh = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+trunksMesh.castShadow = true;
+
+const foliageGeo = new THREE.SphereGeometry(2.8, 7, 6);
+const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2d7a2d, roughness: 0.8 });
+const foliageMesh = new THREE.InstancedMesh(foliageGeo, foliageMat, treeCount);
+foliageMesh.castShadow = true;
+
+// Tree colors for variety
+const treeColors = [0x2d7a2d, 0x3a8a30, 0x1e6b1e, 0x4a9a3a, 0x357a28];
+
+for (let i = 0; i < treeCount; i++) {
+  const angle = rand() * Math.PI * 2;
+  const dist = 25 + rand() * 280;
+  const x = Math.cos(angle) * dist;
+  const z = Math.sin(angle) * dist;
+  const scale = 0.6 + rand() * 1.0;
+  const colIdx = Math.floor(rand() * treeColors.length);
+
+  _m4.compose(
+    new THREE.Vector3(x, -2 + 2 * scale, z),
+    new THREE.Quaternion(),
+    new THREE.Vector3(scale * 0.8, scale, scale * 0.8)
+  );
+  trunksMesh.setMatrixAt(i, _m4);
+
+  _m4.compose(
+    new THREE.Vector3(x, -2 + 4 * scale + 2.5 * scale, z),
+    new THREE.Quaternion(),
+    new THREE.Vector3(scale, scale * (0.8 + rand() * 0.4), scale)
+  );
+  foliageMesh.setMatrixAt(i, _m4);
+  foliageMesh.setColorAt(i, new THREE.Color(treeColors[colIdx]));
+}
+trunksMesh.instanceMatrix.needsUpdate = true;
+foliageMesh.instanceMatrix.needsUpdate = true;
+if (foliageMesh.instanceColor) foliageMesh.instanceColor.needsUpdate = true;
+scene.add(trunksMesh);
+scene.add(foliageMesh);
+
+// ═══════════════════════════════════
+//  DECORATIVE CLOUDS (3D)
+// ═══════════════════════════════════
+const cloudMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  roughness: 1,
+  metalness: 0,
+  transparent: true,
+  opacity: 0.7,
+});
+const cloudGroup = new THREE.Group();
+
+for (let i = 0; i < 20; i++) {
+  const g = new THREE.Group();
+  const puffCount = 3 + Math.floor(rand() * 4);
+  for (let j = 0; j < puffCount; j++) {
+    const r = 8 + rand() * 12;
+    const puffGeo = new THREE.SphereGeometry(r, 8, 6);
+    const puff = new THREE.Mesh(puffGeo, cloudMat);
+    puff.position.set(
+      (rand() - 0.5) * r * 2,
+      (rand() - 0.5) * r * 0.5,
+      (rand() - 0.5) * r * 1.5
+    );
+    puff.scale.y = 0.4 + rand() * 0.3;
+    g.add(puff);
+  }
+  g.position.set(
+    (rand() - 0.5) * 800,
+    80 + rand() * 100,
+    (rand() - 0.5) * 800
+  );
+  cloudGroup.add(g);
+}
+scene.add(cloudGroup);
+
+// ═══════════════════════════════════
+//  SPEED PARTICLES
+// ═══════════════════════════════════
+const particleCount = 200;
+const particleGeo = new THREE.BufferGeometry();
+const pPositions = new Float32Array(particleCount * 3);
+for (let i = 0; i < particleCount * 3; i++) pPositions[i] = (Math.random() - 0.5) * 20;
+particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+const particleMat = new THREE.PointsMaterial({
+  color: 0xffffff,
+  size: 0.2,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+
+// ═══════════════════════════════════
+//  CAMERA LOGIC
+// ═══════════════════════════════════
+let currentT = 0;
+let currentSlide = 0;
+let isAnimating = false;
+let cameraShakeAmount = 0;
+let speedIntensity = 0;
+
+const CAMERA_HEIGHT = 2.2;
+const LOOK_AHEAD = 0.025; // Much further ahead — key fix for "staring at rails"
+const BANK_STRENGTH = 3.5; // Gentle banking (was 15!)
+
+function updateCameraAtT(t) {
+  const tClamped = Math.max(0, Math.min(t, 0.998));
+  const lookT = Math.min(tClamped + LOOK_AHEAD, 0.999);
+
+  const pos = curve.getPointAt(tClamped);
+  const lookPos = curve.getPointAt(lookT);
+
+  camera.position.set(pos.x, pos.y + CAMERA_HEIGHT, pos.z);
+
+  const lookTarget = new THREE.Vector3(lookPos.x, lookPos.y + CAMERA_HEIGHT, lookPos.z);
+  camera.lookAt(lookTarget);
+
+  // Gentle banking from curvature
+  const tangent = curve.getTangentAt(tClamped).normalize();
+  const nextTangent = curve.getTangentAt(lookT).normalize();
+  const curvatureVec = new THREE.Vector3().subVectors(nextTangent, tangent);
+  const right = new THREE.Vector3().crossVectors(tangent, _up).normalize();
+  const bankAngle = curvatureVec.dot(right) * BANK_STRENGTH;
+  camera.rotateZ(-bankAngle);
+
+  // Camera shake
+  if (cameraShakeAmount > 0) {
+    camera.position.x += (Math.random() - 0.5) * cameraShakeAmount * 0.25;
+    camera.position.y += (Math.random() - 0.5) * cameraShakeAmount * 0.15;
+    camera.position.z += (Math.random() - 0.5) * cameraShakeAmount * 0.25;
+  }
+
+  // Particles
+  particles.position.copy(camera.position);
+  particleMat.opacity = speedIntensity * 0.5;
+}
+
+updateCameraAtT(0);
+
+// ═══════════════════════════════════
+//  SLIDE VISIBILITY (screen overlay)
+// ═══════════════════════════════════
+function showSlide(index) {
+  slideCards.forEach((card, i) => {
+    card.classList.toggle('visible', i === index);
+  });
+}
+
+// ═══════════════════════════════════
+//  UI
+// ═══════════════════════════════════
+const progressEl = document.getElementById('progress');
+const counterEl = document.getElementById('slide-counter');
+const hintEl = document.getElementById('hint');
+const speedOverlay = document.getElementById('speed-overlay');
+
+for (let i = 0; i < 10; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.addEventListener('click', (e) => { e.stopPropagation(); goToSlide(i); });
+  progressEl.appendChild(dot);
+}
+
+function updateUI(slideIndex) {
+  counterEl.textContent = `${slideIndex + 1} / 10`;
+  progressEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === slideIndex));
+}
+
+// ═══════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════
+function goToSlide(targetIndex) {
+  if (isAnimating || targetIndex === currentSlide || targetIndex < 0 || targetIndex > 9) return;
+  isAnimating = true;
+
+  if (hintEl.style.opacity !== '0') {
+    hintEl.style.opacity = '0';
+    setTimeout(() => { hintEl.style.display = 'none'; }, 1000);
+  }
+
+  const fromT = stationTs[currentSlide];
+  const toT = stationTs[targetIndex];
+  const movingForward = targetIndex > currentSlide;
+  const segIdx = movingForward ? targetIndex : currentSlide;
+  const config = segmentConfig[Math.min(segIdx, 9)];
+
+  const dist = Math.abs(toT - fromT);
+  const baseDuration = dist * 12;
+  const duration = Math.max(1.5, Math.min(4.0, baseDuration * config.durationScale));
+
+  const isFast = [2, 6, 8].includes(targetIndex);
+  const isSlow = [1, 5].includes(targetIndex);
+
+  // Fade out current slide
+  showSlide(-1);
+
+  const animObj = { t: fromT };
+
+  gsap.to(animObj, {
+    t: toT,
+    duration: duration,
+    ease: config.ease,
+    onUpdate: () => {
+      currentT = animObj.t;
+      const progress = Math.abs((animObj.t - fromT) / (toT - fromT));
+
+      if (isFast) {
+        const ramp = Math.sin(progress * Math.PI);
+        cameraShakeAmount = ramp * 0.4;
+        speedIntensity = ramp;
+        speedOverlay.style.opacity = String(ramp * 0.3);
+      } else if (isSlow) {
+        cameraShakeAmount = 0;
+        speedIntensity = 0;
+        speedOverlay.style.opacity = '0';
+      } else {
+        cameraShakeAmount = 0.03;
+        speedIntensity = 0.1;
+        speedOverlay.style.opacity = '0';
+      }
+
+      updateCameraAtT(currentT);
+    },
+    onComplete: () => {
+      currentSlide = targetIndex;
+      isAnimating = false;
+      cameraShakeAmount = 0;
+      speedIntensity = 0;
+      speedOverlay.style.opacity = '0';
+      particleMat.opacity = 0;
+      showSlide(targetIndex);
+      updateUI(targetIndex);
+    }
+  });
+}
+
+function nextSlide() { goToSlide(currentSlide + 1); }
+function prevSlide() { goToSlide(currentSlide - 1); }
+
+document.getElementById('nav-next').addEventListener('click', (e) => { e.stopPropagation(); nextSlide(); });
+document.getElementById('nav-prev').addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
+document.addEventListener('click', () => nextSlide());
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); nextSlide(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); goToSlide(0); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); goToSlide(9); }
+  else if (e.key >= '1' && e.key <= '9') goToSlide(parseInt(e.key) - 1);
+  else if (e.key === '0') goToSlide(9);
+});
+
+// ═══════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// ═══════════════════════════════════
+//  ANIMATION LOOP
+// ═══════════════════════════════════
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const time = clock.getElapsedTime();
+
+  // Gentle idle sway
+  if (!isAnimating) {
+    updateCameraAtT(currentT); // re-apply clean camera each frame
+    const sway = Math.sin(time * 0.4) * 0.002;
+    camera.rotation.z += sway;
+  }
+
+  // Slowly drift clouds
+  cloudGroup.children.forEach((c, i) => {
+    c.position.x += Math.sin(i * 0.3 + time * 0.01) * 0.02;
+  });
+
+  // Speed particles
+  const posArr = particleGeo.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    posArr[i * 3 + 2] -= speedIntensity * dt * 40;
+    if (posArr[i * 3 + 2] < -10) posArr[i * 3 + 2] = 10;
+  }
+  particleGeo.attributes.position.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
