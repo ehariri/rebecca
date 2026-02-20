@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Roller Coaster Presentation</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body { overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-  #c { display: block; width: 100vw; height: 100vh; }
+  #c { display: block; width: 100vw; height: 100dvh; height: 100vh; }
 
   /* ── Slide overlay (fixed on screen, not in 3D) ── */
   #slide-overlay {
@@ -83,7 +83,7 @@
   #ui {
     position: fixed; bottom: 0; left: 0; right: 0;
     display: flex; flex-direction: column; align-items: center;
-    padding-bottom: 24px; pointer-events: none; z-index: 100;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); pointer-events: none; z-index: 100;
   }
   #slide-counter {
     font-size: 13px; color: rgba(255,255,255,0.7);
@@ -150,9 +150,9 @@
   @media (max-width: 600px) {
     .slide-card {
       width: min(340px, 90vw);
-      padding: 20px 22px;
+      padding: 18px 20px;
       top: auto;
-      bottom: 70px;
+      bottom: calc(60px + env(safe-area-inset-bottom, 0px));
       left: 50% !important;
       right: auto !important;
       transform: translateX(-50%) translateY(20px) !important;
@@ -160,24 +160,28 @@
     .slide-card.visible {
       transform: translateX(-50%) translateY(0) !important;
     }
-    .slide-card h2 { font-size: 19px; margin-bottom: 6px; }
-    .slide-card p { font-size: 13px; line-height: 1.5; }
-    .slide-card .tag { font-size: 10px; }
-    .slide-card .accent { margin-bottom: 8px; }
-    .nav-arrow { top: auto; bottom: 80px; transform: none; width: 34px; height: 34px; font-size: 14px; }
-    #nav-prev { left: 8px; }
-    #nav-next { right: 8px; }
+    .slide-card h2 { font-size: 18px; margin-bottom: 5px; }
+    .slide-card p { font-size: 12.5px; line-height: 1.45; }
+    .slide-card .tag { font-size: 9px; margin-bottom: 4px; }
+    .slide-card .accent { margin-bottom: 6px; width: 30px; height: 3px; }
+    .nav-arrow {
+      top: 50%; bottom: auto;
+      transform: translateY(-50%);
+      width: 32px; height: 32px; font-size: 13px;
+    }
+    #nav-prev { left: 6px; }
+    #nav-next { right: 6px; }
     #hint {
-      top: 30%;
+      top: 28%;
       font-size: 14px;
-      padding: 16px 24px;
-      width: min(300px, 85vw);
+      padding: 16px 22px;
+      width: min(280px, 82vw);
     }
     #hint span { font-size: 11px; }
-    #progress .dot { width: 8px; height: 8px; }
-    #progress { gap: 7px; }
-    #ui { padding-bottom: 18px; }
-    #slide-counter { font-size: 11px; margin-bottom: 6px; }
+    #progress .dot { width: 7px; height: 7px; }
+    #progress { gap: 6px; }
+    #ui { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    #slide-counter { font-size: 11px; margin-bottom: 5px; }
   }
 </style>
 
