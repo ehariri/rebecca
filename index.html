@@ -145,6 +145,40 @@
     pointer-events: none; z-index: 50; opacity: 0;
     background: radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.06) 100%);
   }
+
+  /* ── Mobile ── */
+  @media (max-width: 600px) {
+    .slide-card {
+      width: min(340px, 90vw);
+      padding: 20px 22px;
+      top: auto;
+      bottom: 70px;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) translateY(20px) !important;
+    }
+    .slide-card.visible {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    .slide-card h2 { font-size: 19px; margin-bottom: 6px; }
+    .slide-card p { font-size: 13px; line-height: 1.5; }
+    .slide-card .tag { font-size: 10px; }
+    .slide-card .accent { margin-bottom: 8px; }
+    .nav-arrow { top: auto; bottom: 80px; transform: none; width: 34px; height: 34px; font-size: 14px; }
+    #nav-prev { left: 8px; }
+    #nav-next { right: 8px; }
+    #hint {
+      top: 30%;
+      font-size: 14px;
+      padding: 16px 24px;
+      width: min(300px, 85vw);
+    }
+    #hint span { font-size: 11px; }
+    #progress .dot { width: 8px; height: 8px; }
+    #progress { gap: 7px; }
+    #ui { padding-bottom: 18px; }
+    #slide-counter { font-size: 11px; margin-bottom: 6px; }
+  }
 </style>
 
 <script type="importmap">
@@ -230,7 +264,7 @@ slideCards[0].classList.add('visible');
 // ═══════════════════════════════════
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -822,7 +856,7 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  renderer.setSize(w, h, false);
 });
 
 // ═══════════════════════════════════
