@@ -384,10 +384,27 @@ for (let i = 0; i < gPos.count; i++) {
 }
 groundGeo.computeVertexNormals();
 
+// Vertex colors: greener near center, warmer brown at edges
+const groundColors = new Float32Array(gPos.count * 3);
+const centerGreen = new THREE.Color(0x4a8c3f);
+const edgeBrown = new THREE.Color(0x8b7355);
+for (let i = 0; i < gPos.count; i++) {
+  const x = gPos.getX(i);
+  const y = gPos.getY(i);
+  const dist = Math.sqrt(x * x + y * y);
+  const blend = Math.min(dist / 500, 1.0);
+  const col = centerGreen.clone().lerp(edgeBrown, blend * blend);
+  groundColors[i * 3] = col.r;
+  groundColors[i * 3 + 1] = col.g;
+  groundColors[i * 3 + 2] = col.b;
+}
+groundGeo.setAttribute('color', new THREE.BufferAttribute(groundColors, 3));
+
 const groundMat = new THREE.MeshStandardMaterial({
-  color: 0x4a8c3f,
+  color: 0xffffff,
   roughness: 0.9,
   metalness: 0.0,
+  vertexColors: true,
 });
 const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
@@ -520,7 +537,9 @@ function buildRail(offsetDir) {
   const mat = new THREE.MeshStandardMaterial({
     color: 0xcc3333,
     metalness: 0.6,
-    roughness: 0.35
+    roughness: 0.35,
+    emissive: 0x991111,
+    emissiveIntensity: 0.15,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true;
@@ -642,6 +661,229 @@ scene.add(trunksMesh);
 scene.add(foliageMesh);
 
 // ═══════════════════════════════════
+//  PINE TREES (instanced cones)
+// ═══════════════════════════════════
+const pineCount = 150;
+const pineFoliageGeo = new THREE.ConeGeometry(2.2, 7, 6);
+const pineFoliageMat = new THREE.MeshStandardMaterial({ color: 0x1a5c1a, roughness: 0.85 });
+const pineFoliageMesh = new THREE.InstancedMesh(pineFoliageGeo, pineFoliageMat, pineCount);
+pineFoliageMesh.castShadow = true;
+
+const pineTrunkGeo = new THREE.CylinderGeometry(0.15, 0.3, 3, 5);
+const pineTrunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.9 });
+const pineTrunksMesh = new THREE.InstancedMesh(pineTrunkGeo, pineTrunkMat, pineCount);
+pineTrunksMesh.castShadow = true;
+
+const pineColors = [0x1a5c1a, 0x2a6e2a, 0x0f4f0f, 0x1e6b1e, 0x245e24];
+
+for (let i = 0; i < pineCount; i++) {
+  const angle = rand() * Math.PI * 2;
+  const dist = 30 + rand() * 300;
+  const x = Math.cos(angle) * dist;
+  const z = Math.sin(angle) * dist;
+  const scale = 0.5 + rand() * 0.9;
+
+  _m4.compose(
+    new THREE.Vector3(x, -2 + 1.5 * scale, z),
+    new THREE.Quaternion(),
+    new THREE.Vector3(scale * 0.6, scale, scale * 0.6)
+  );
+  pineTrunksMesh.setMatrixAt(i, _m4);
+
+  _m4.compose(
+    new THREE.Vector3(x, -2 + 3 * scale + 3.5 * scale, z),
+    new THREE.Quaternion(),
+    new THREE.Vector3(scale, scale * (0.8 + rand() * 0.4), scale)
+  );
+  pineFoliageMesh.setMatrixAt(i, _m4);
+  pineFoliageMesh.setColorAt(i, new THREE.Color(pineColors[Math.floor(rand() * pineColors.length)]));
+}
+pineTrunksMesh.instanceMatrix.needsUpdate = true;
+pineFoliageMesh.instanceMatrix.needsUpdate = true;
+if (pineFoliageMesh.instanceColor) pineFoliageMesh.instanceColor.needsUpdate = true;
+scene.add(pineTrunksMesh);
+scene.add(pineFoliageMesh);
+
+// ═══════════════════════════════════
+//  WATER LAKE
+// ═══════════════════════════════════
+const lakeGeo = new THREE.PlaneGeometry(60, 50, 32, 32);
+const lakeMat = new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: {
+    uTime: { value: 0 },
+    uDeepColor: { value: new THREE.Color(0x1a5276) },
+    uShallowColor: { value: new THREE.Color(0x5dade2) },
+    uSkyColor: { value: new THREE.Color(0x87ceeb) },
+  },
+  vertexShader: `
+    uniform float uTime;
+    varying vec2 vUv;
+    varying float vWave;
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    void main() {
+      vUv = uv;
+      vec3 pos = position;
+      float wave = sin(pos.x * 0.3 + uTime * 1.2) * cos(pos.y * 0.4 + uTime * 0.8) * 0.6
+                 + sin(pos.x * 0.7 + uTime * 2.0) * 0.2;
+      pos.z += wave;
+      vWave = wave;
+      vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+      vWorldPos = worldPos.xyz;
+      vNormal = normalize(normalMatrix * vec3(
+        -cos(pos.x * 0.3 + uTime * 1.2) * 0.3 * 0.6,
+        -sin(pos.y * 0.4 + uTime * 0.8) * 0.4 * 0.6,
+        1.0
+      ));
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uDeepColor;
+    uniform vec3 uShallowColor;
+    uniform vec3 uSkyColor;
+    varying vec2 vUv;
+    varying float vWave;
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    void main() {
+      vec3 viewDir = normalize(cameraPosition - vWorldPos);
+      float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 3.0);
+      vec3 waterColor = mix(uDeepColor, uShallowColor, vUv.y * 0.5 + vWave * 0.3 + 0.3);
+      vec3 col = mix(waterColor, uSkyColor, fresnel * 0.6);
+      float foam = smoothstep(0.35, 0.5, vWave);
+      col = mix(col, vec3(1.0), foam * 0.15);
+      gl_FragColor = vec4(col, 0.85);
+    }
+  `
+});
+const lake = new THREE.Mesh(lakeGeo, lakeMat);
+lake.rotation.x = -Math.PI / 2;
+lake.position.set(-120, -1.5, 80);
+scene.add(lake);
+
+// ═══════════════════════════════════
+//  HOT AIR BALLOONS
+// ═══════════════════════════════════
+const balloons = [];
+const balloonColors = [0xe74c3c, 0xf39c12, 0x3498db, 0x9b59b6, 0x1abc9c, 0xe67e22];
+const balloonEnvelopeGeo = new THREE.SphereGeometry(4, 12, 10);
+const balloonBasketGeo = new THREE.BoxGeometry(1.8, 1.2, 1.8);
+const balloonBasketMat = new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.9 });
+
+for (let i = 0; i < 6; i++) {
+  const group = new THREE.Group();
+  const envelopeMat = new THREE.MeshStandardMaterial({
+    color: balloonColors[i],
+    roughness: 0.7,
+    metalness: 0.1,
+  });
+  const envelope = new THREE.Mesh(balloonEnvelopeGeo, envelopeMat);
+  envelope.scale.set(1, 1.3, 1);
+  group.add(envelope);
+
+  const basket = new THREE.Mesh(balloonBasketGeo, balloonBasketMat);
+  basket.position.y = -6.5;
+  group.add(basket);
+
+  // Ropes
+  const ropeMat = new THREE.LineBasicMaterial({ color: 0x8b6914 });
+  const ropeOffsets = [[-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]];
+  ropeOffsets.forEach(([rx, rz]) => {
+    const ropeGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(rx * 1.5, -3.5, rz * 1.5),
+      new THREE.Vector3(rx, -5.9, rz)
+    ]);
+    group.add(new THREE.Line(ropeGeo, ropeMat));
+  });
+
+  const angle = (i / 6) * Math.PI * 2 + rand() * 0.5;
+  const dist = 80 + rand() * 120;
+  group.position.set(
+    Math.cos(angle) * dist,
+    60 + rand() * 60,
+    Math.sin(angle) * dist
+  );
+  group.userData = {
+    baseY: group.position.y,
+    bobSpeed: 0.3 + rand() * 0.4,
+    bobAmount: 1.5 + rand() * 2,
+    driftSpeed: 0.1 + rand() * 0.15,
+    driftRadius: 3 + rand() * 5,
+    phase: rand() * Math.PI * 2,
+  };
+  scene.add(group);
+  balloons.push(group);
+}
+
+// ═══════════════════════════════════
+//  AMBIENT FLOATING PARTICLES
+// ═══════════════════════════════════
+const ambientParticleCount = 150;
+const ambientParticleGeo = new THREE.BufferGeometry();
+const ambientPositions = new Float32Array(ambientParticleCount * 3);
+const ambientOffsets = new Float32Array(ambientParticleCount * 3);
+for (let i = 0; i < ambientParticleCount; i++) {
+  ambientPositions[i * 3] = (Math.random() - 0.5) * 40;
+  ambientPositions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+  ambientPositions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+  ambientOffsets[i * 3] = Math.random() * Math.PI * 2;
+  ambientOffsets[i * 3 + 1] = Math.random() * Math.PI * 2;
+  ambientOffsets[i * 3 + 2] = Math.random() * Math.PI * 2;
+}
+ambientParticleGeo.setAttribute('position', new THREE.BufferAttribute(ambientPositions, 3));
+const ambientParticleMat = new THREE.PointsMaterial({
+  color: 0xffd700,
+  size: 0.15,
+  transparent: true,
+  opacity: 0.4,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+});
+const ambientParticles = new THREE.Points(ambientParticleGeo, ambientParticleMat);
+scene.add(ambientParticles);
+
+// ═══════════════════════════════════
+//  STATION SPARKLES
+// ═══════════════════════════════════
+const sparkleCount = 80;
+const sparkleGeo = new THREE.BufferGeometry();
+const sparklePositions = new Float32Array(sparkleCount * 3);
+const sparkleVelocities = new Float32Array(sparkleCount * 3);
+sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+
+const sparkleMat = new THREE.PointsMaterial({
+  color: 0xffffff,
+  size: 0.3,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+});
+const sparkleParticles = new THREE.Points(sparkleGeo, sparkleMat);
+scene.add(sparkleParticles);
+
+let sparkleActive = false;
+let sparkleTimer = 0;
+const SPARKLE_DURATION = 2.0;
+
+function fireSparkles() {
+  sparkleActive = true;
+  sparkleTimer = 0;
+  for (let i = 0; i < sparkleCount; i++) {
+    sparklePositions[i * 3] = camera.position.x;
+    sparklePositions[i * 3 + 1] = camera.position.y;
+    sparklePositions[i * 3 + 2] = camera.position.z;
+    sparkleVelocities[i * 3] = (Math.random() - 0.5) * 12;
+    sparkleVelocities[i * 3 + 1] = Math.random() * 8 + 2;
+    sparkleVelocities[i * 3 + 2] = (Math.random() - 0.5) * 12;
+  }
+  sparkleGeo.attributes.position.needsUpdate = true;
+  sparkleMat.opacity = 1;
+}
+
+// ═══════════════════════════════════
 //  DECORATIVE CLOUDS (3D)
 // ═══════════════════════════════════
 const cloudMat = new THREE.MeshStandardMaterial({
@@ -750,6 +992,7 @@ function showSlide(index) {
   slideCards.forEach((card, i) => {
     card.classList.toggle('visible', i === index);
   });
+  if (index >= 0) fireSparkles();
 }
 
 // ═══════════════════════════════════
@@ -895,6 +1138,55 @@ function animate() {
     if (posArr[i * 3 + 2] < -10) posArr[i * 3 + 2] = 10;
   }
   particleGeo.attributes.position.needsUpdate = true;
+
+  // Lake time uniform
+  lakeMat.uniforms.uTime.value = time;
+
+  // Balloon bob & drift
+  balloons.forEach(b => {
+    const ud = b.userData;
+    b.position.y = ud.baseY + Math.sin(time * ud.bobSpeed + ud.phase) * ud.bobAmount;
+    b.position.x += Math.sin(time * ud.driftSpeed + ud.phase) * 0.02;
+    b.position.z += Math.cos(time * ud.driftSpeed + ud.phase) * 0.02;
+  });
+
+  // Ambient particle drift
+  ambientParticles.position.copy(camera.position);
+  const apArr = ambientParticleGeo.attributes.position.array;
+  for (let i = 0; i < ambientParticleCount; i++) {
+    const ox = ambientOffsets[i * 3];
+    const oy = ambientOffsets[i * 3 + 1];
+    const oz = ambientOffsets[i * 3 + 2];
+    apArr[i * 3] += Math.sin(time * 0.3 + ox) * 0.01;
+    apArr[i * 3 + 1] += Math.sin(time * 0.2 + oy) * 0.008;
+    apArr[i * 3 + 2] += Math.cos(time * 0.25 + oz) * 0.01;
+    if (apArr[i * 3] > 20) apArr[i * 3] = -20;
+    if (apArr[i * 3] < -20) apArr[i * 3] = 20;
+    if (apArr[i * 3 + 1] > 10) apArr[i * 3 + 1] = -10;
+    if (apArr[i * 3 + 1] < -10) apArr[i * 3 + 1] = 10;
+    if (apArr[i * 3 + 2] > 20) apArr[i * 3 + 2] = -20;
+    if (apArr[i * 3 + 2] < -20) apArr[i * 3 + 2] = 20;
+  }
+  ambientParticleGeo.attributes.position.needsUpdate = true;
+
+  // Station sparkle physics & fade
+  if (sparkleActive) {
+    sparkleTimer += dt;
+    const progress = sparkleTimer / SPARKLE_DURATION;
+    if (progress >= 1) {
+      sparkleActive = false;
+      sparkleMat.opacity = 0;
+    } else {
+      sparkleMat.opacity = 1 - progress;
+      for (let i = 0; i < sparkleCount; i++) {
+        sparkleVelocities[i * 3 + 1] -= 9.8 * dt;
+        sparklePositions[i * 3] += sparkleVelocities[i * 3] * dt;
+        sparklePositions[i * 3 + 1] += sparkleVelocities[i * 3 + 1] * dt;
+        sparklePositions[i * 3 + 2] += sparkleVelocities[i * 3 + 2] * dt;
+      }
+      sparkleGeo.attributes.position.needsUpdate = true;
+    }
+  }
 
   renderer.render(scene, camera);
 }
