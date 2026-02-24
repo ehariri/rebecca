@@ -42,6 +42,7 @@
   }
   .slide-card.visible {
     opacity: 1;
+    pointer-events: auto;
   }
   .slide-card.side-left.visible {
     transform: translateY(-50%) translateX(0);
@@ -77,6 +78,123 @@
     letter-spacing: 1.5px;
     margin-bottom: 8px;
     opacity: 0.65;
+  }
+
+  .slide-card.clickable {
+    cursor: pointer;
+    transition: opacity 0.5s ease, transform 0.5s ease, background 0.25s ease;
+  }
+  .slide-card.clickable:hover {
+    background: rgba(255,255,255,0.18);
+  }
+  .slide-card .click-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    opacity: 0.45;
+    letter-spacing: 0.5px;
+  }
+  .slide-card.center-intro {
+    left: 50%;
+    width: min(580px, 90vw);
+    text-align: center;
+    transform: translateX(-50%) translateY(-50%) scale(0.95);
+  }
+  .slide-card.center-intro.visible {
+    transform: translateX(-50%) translateY(-50%) scale(1);
+  }
+
+  /* ── Solution Modal ── */
+  #solution-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  #solution-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-backdrop {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .modal-content {
+    position: relative;
+    width: min(560px, 90vw);
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 36px 40px;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    color: #fff;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+  }
+  .modal-content .modal-accent {
+    display: inline-block;
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+  .modal-content h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .modal-content .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    opacity: 0.55;
+  }
+  .modal-content .section-label + p {
+    margin-bottom: 20px;
+  }
+  .modal-content p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.88);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .modal-content p em {
+    font-style: italic;
+    color: rgba(255,255,255,0.95);
   }
 
   /* ── UI overlay ── */
@@ -146,6 +264,87 @@
     background: radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.06) 100%);
   }
 
+  /* ── Password Gate ── */
+  #password-gate {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: opacity 0.5s ease;
+  }
+  #password-gate.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .gate-card {
+    width: min(420px, 88vw);
+    padding: 40px 36px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    color: #fff;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08) inset;
+    text-align: center;
+  }
+  .gate-card h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .gate-card p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+  }
+  #gate-input {
+    display: block;
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    font-family: inherit;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    color: #fff;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  #gate-input::placeholder { color: rgba(255,255,255,0.35); }
+  #gate-input:focus { border-color: rgba(255,255,255,0.5); }
+  #gate-submit {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #gate-submit:hover { background: rgba(255,255,255,0.28); }
+  #gate-error {
+    margin-top: 14px;
+    font-size: 14px;
+    color: #ff6b6b;
+    min-height: 20px;
+    transition: opacity 0.3s;
+  }
+
   /* ── Mobile ── */
   @media (max-width: 600px) {
     .slide-card {
@@ -185,6 +384,10 @@
     #progress { gap: 6px; }
     #ui { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
     #slide-counter { font-size: 11px; margin-bottom: 5px; }
+    .modal-content { padding: 24px 22px; max-height: 70vh; }
+    .modal-content h3 { font-size: 18px; }
+    .modal-content p { font-size: 13px; }
+    .slide-card .click-hint { font-size: 11px; margin-top: 8px; }
   }
 </style>
 
@@ -202,19 +405,36 @@
 <canvas id="c"></canvas>
 <div id="speed-overlay"></div>
 
+<!-- Password gate -->
+<div id="password-gate">
+  <div class="gate-card">
+    <h2>Liability Loop-de-Loop</h2>
+    <p>Enter the password to begin.</p>
+    <input type="password" id="gate-input" placeholder="Password" autofocus>
+    <button id="gate-submit">Enter</button>
+    <div id="gate-error"></div>
+  </div>
+</div>
+
 <!-- Slide content as fixed screen overlay -->
 <div id="slide-overlay"></div>
 
+<!-- Solution modal -->
+<div id="solution-modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content"></div>
+</div>
+
 <div id="ui">
-  <div id="slide-counter">1 / 10</div>
+  <div id="slide-counter">1 / 6</div>
   <div id="progress"></div>
 </div>
 
 <button class="nav-arrow" id="nav-prev">&#8592;</button>
 <button class="nav-arrow" id="nav-next">&#8594;</button>
 
-<div id="hint">
-  Click anywhere or press <b>Space</b> to ride<span>Arrow keys &middot; Number keys 1-0 &middot; Click dots</span>
+<div id="hint" style="display:none">
+  Click anywhere or press <b>Space</b> to ride<span>Arrow keys &middot; Number keys 1-6 &middot; Click dots</span>
 </div>
 
 <script type="module">
@@ -229,42 +449,141 @@ await new Promise(resolve => {
 });
 
 // ═══════════════════════════════════
-//  SLIDE DATA
+//  ENCRYPTED SLIDE DATA
 // ═══════════════════════════════════
-const slides = [
-  { title: 'Welcome Aboard', body: 'Strap in for a ride through ideas. Each station reveals something new. Enjoy the journey.', tag: 'Station 1', color: '#6C63FF' },
-  { title: 'The Big Climb', body: 'Every great idea starts with a slow, deliberate ascent. Patience builds the foundation for what comes next.', tag: 'Station 2', color: '#FF6B6B' },
-  { title: 'First Drop', body: 'That moment of freefall when an insight clicks. The rush of seeing everything come together at once.', tag: 'Station 3', color: '#4ECDC4' },
-  { title: 'Sweeping Turn', body: 'Perspective shifts when you lean into the curve. The best ideas come from changing your angle of approach.', tag: 'Station 4', color: '#FFE66D' },
-  { title: 'Camelback Hills', body: "Progress isn't linear. It's a series of ups and downs, each peak a little higher than the last.", tag: 'Station 5', color: '#A8E6CF' },
-  { title: 'The Helix', body: 'Sometimes you circle the same problem from different heights until the solution spirals into view.', tag: 'Station 6', color: '#DDA0DD' },
-  { title: 'The Twist', body: 'Quick pivots and unexpected turns test your adaptability. The best teams thrive in chaos.', tag: 'Station 7', color: '#FF8C42' },
-  { title: 'Smooth Glide', body: "Take a breath. Reflection isn't idle — it's where lessons crystallize and next steps become clear.", tag: 'Station 8', color: '#87CEEB' },
-  { title: 'Bunny Hops', body: 'Small, playful experiments. Rapid prototypes. Quick wins that build momentum for the grand finale.', tag: 'Station 9', color: '#98D8C8' },
-  { title: 'Grand Finale', body: "Every ride ends at a station. What matters is the view you've gained and the courage to ride again.", tag: 'Station 10', color: '#F7DC6F' },
-];
+const TOTAL_SLIDES = 6;
+const ENCRYPTED_SLIDES = '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';
 
 // ═══════════════════════════════════
-//  BUILD SLIDE CARDS (screen-space)
+//  DECRYPTION
+// ═══════════════════════════════════
+async function decryptSlides(password) {
+  const raw = Uint8Array.from(atob(ENCRYPTED_SLIDES), c => c.charCodeAt(0));
+  const salt = raw.slice(0, 16);
+  const iv = raw.slice(16, 28);
+  const ciphertext = raw.slice(28);
+
+  const keyMaterial = await crypto.subtle.importKey('raw',
+    new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+// ═══════════════════════════════════
+//  PRESENTATION INIT (after decryption)
 // ═══════════════════════════════════
 const overlayEl = document.getElementById('slide-overlay');
 const slideCards = [];
 
-slides.forEach((slide, i) => {
-  const div = document.createElement('div');
-  div.className = 'slide-card ' + (i % 2 === 0 ? 'side-left' : 'side-right');
-  div.innerHTML = `
-    <div class="accent" style="background:${slide.color}"></div>
-    <div class="tag">${slide.tag}</div>
-    <h2>${slide.title}</h2>
-    <p>${slide.body}</p>
+const modalEl = document.getElementById('solution-modal');
+const modalContentEl = modalEl.querySelector('.modal-content');
+let modalOpen = false;
+
+function openModal(slide) {
+  modalContentEl.innerHTML = `
+    <button class="modal-close">&times;</button>
+    <div class="modal-accent" style="background:${slide.color}"></div>
+    <h3>${slide.title}</h3>
+    <div class="section-label">Legal Context</div>
+    <p>${slide.law}</p>
+    <div class="section-label">Proposed Solution</div>
+    <p>${slide.solution}</p>
   `;
-  overlayEl.appendChild(div);
-  slideCards.push(div);
+  modalEl.classList.add('open');
+  modalOpen = true;
+  modalContentEl.querySelector('.modal-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeModal();
+  });
+}
+
+function closeModal() {
+  modalEl.classList.remove('open');
+  modalOpen = false;
+}
+
+modalEl.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeModal();
+});
+modalContentEl.addEventListener('click', (e) => {
+  e.stopPropagation();
 });
 
-// Show first slide
-slideCards[0].classList.add('visible');
+function initPresentation(slides) {
+  slides.forEach((slide, i) => {
+    const div = document.createElement('div');
+    div.className = 'slide-card ' + (i % 2 === 0 ? 'side-left' : 'side-right');
+
+    if (slide.type === 'intro') {
+      div.className = 'slide-card center-intro';
+      div.innerHTML = `
+        <div class="accent" style="background:${slide.color}"></div>
+        <div class="tag">${slide.tag}</div>
+        <h2>${slide.title}</h2>
+        <p>${slide.body}</p>
+      `;
+    } else {
+      div.className += ' clickable';
+      div.innerHTML = `
+        <div class="accent" style="background:${slide.color}"></div>
+        <div class="tag">${slide.tag}</div>
+        <h2>${slide.title}</h2>
+        <p>${slide.problem}</p>
+        <div class="click-hint">Click to view solution</div>
+      `;
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openModal(slide);
+      });
+    }
+
+    overlayEl.appendChild(div);
+    slideCards.push(div);
+  });
+
+  slideCards[0].classList.add('visible');
+  showSlide(0);
+}
+
+// ═══════════════════════════════════
+//  PASSWORD GATE
+// ═══════════════════════════════════
+const gateEl = document.getElementById('password-gate');
+const gateInput = document.getElementById('gate-input');
+const gateSubmit = document.getElementById('gate-submit');
+const gateError = document.getElementById('gate-error');
+
+async function attemptUnlock() {
+  const password = gateInput.value;
+  if (!password) return;
+  gateError.textContent = '';
+  gateSubmit.disabled = true;
+  gateSubmit.textContent = 'Decrypting…';
+  try {
+    const slides = await decryptSlides(password);
+    gateEl.classList.add('hidden');
+    setTimeout(() => { gateEl.style.display = 'none'; }, 500);
+    initPresentation(slides);
+  } catch (e) {
+    gateError.textContent = 'Incorrect password';
+    gateSubmit.disabled = false;
+    gateSubmit.textContent = 'Enter';
+    gateInput.focus();
+    gateInput.select();
+  }
+}
+
+gateEl.addEventListener('click', (e) => e.stopPropagation());
+gateSubmit.addEventListener('click', attemptUnlock);
+gateInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') attemptUnlock();
+});
 
 // ═══════════════════════════════════
 //  SCENE SETUP
@@ -484,35 +803,31 @@ const controlPoints = [
   new THREE.Vector3(28, 5.5, 50),
   new THREE.Vector3(14, 5, 44),
   new THREE.Vector3(4, 5, 36),
+
+  // Return to station (smooth loop back)
+  new THREE.Vector3(-4, 5, 24),
+  new THREE.Vector3(-6, 5, 12),
 ];
 
-const curve = new THREE.CatmullRomCurve3(controlPoints, false, 'catmullrom', 0.35);
+const curve = new THREE.CatmullRomCurve3(controlPoints, true, 'catmullrom', 0.35);
 
-// Station t-values
+// Station t-values (6 stations, loop closes via return section ~0.88-1.0)
 const stationTs = [
-  0.000,  // 1 - Loading
-  0.115,  // 2 - Big Climb
-  0.200,  // 3 - First Drop
-  0.320,  // 4 - Sweeping Turn
-  0.425,  // 5 - Camelback Hills
-  0.545,  // 6 - Helix
-  0.645,  // 7 - Twist
-  0.745,  // 8 - Smooth Glide
-  0.845,  // 9 - Bunny Hops
-  0.955,  // 10 - Grand Finale
+  0.000,  // Intro - Loading station
+  0.175,  // Issue 1 - After the First Drop
+  0.350,  // Issue 2 - After Camelback Hills
+  0.510,  // Issue 3 - After the Helix
+  0.680,  // Issue 4 - After Smooth Glide
+  0.840,  // Issue 5 - Grand Finale
 ];
 
 const segmentConfig = [
-  { ease: 'power2.inOut', durationScale: 1.0 },
-  { ease: 'power3.out',   durationScale: 1.6 },
-  { ease: 'power3.in',    durationScale: 0.7 },
-  { ease: 'power2.inOut', durationScale: 1.1 },
-  { ease: 'power1.inOut', durationScale: 1.0 },
-  { ease: 'power2.inOut', durationScale: 1.3 },
-  { ease: 'power2.in',    durationScale: 0.8 },
-  { ease: 'none',         durationScale: 1.2 },
-  { ease: 'power1.inOut', durationScale: 0.9 },
-  { ease: 'power3.out',   durationScale: 1.4 },
+  { ease: 'power2.inOut', durationScale: 1.0 },  // Intro
+  { ease: 'power3.in',    durationScale: 1.4 },  // Climb + Drop
+  { ease: 'power2.inOut', durationScale: 1.2 },  // Hills
+  { ease: 'power2.inOut', durationScale: 1.3 },  // Helix
+  { ease: 'none',         durationScale: 1.1 },  // Smooth Glide
+  { ease: 'power3.out',   durationScale: 1.4 },  // Grand Finale
 ];
 
 // ═══════════════════════════════════
@@ -594,13 +909,41 @@ const pillarsMesh = new THREE.InstancedMesh(pillarGeo, pillarMat, pillarCount);
 pillarsMesh.castShadow = true;
 
 const _pillarQ = new THREE.Quaternion();
+
+// Pre-sample track for collision checks (pillars & trees)
+const trackSamples = [];
+for (let j = 0; j <= 200; j++) trackSamples.push(curve.getPointAt(j / 200));
+
+function nearTrack(x, z, minDist) {
+  const minDistSq = minDist * minDist;
+  for (let j = 0; j < trackSamples.length; j++) {
+    const sp = trackSamples[j];
+    const dx = sp.x - x, dz = sp.z - z;
+    if (dx * dx + dz * dz < minDistSq) return true;
+  }
+  return false;
+}
+
 for (let i = 0; i < pillarCount; i++) {
   const t = i / pillarCount;
   const pos = curve.getPointAt(t);
   const groundY = -2;
   const height = pos.y - groundY - 0.3;
-  if (height < 2.5) {
-    // Hide pillars that are too short
+
+  // Hide pillar entirely if another track section passes between ground and this point
+  let blocked = false;
+  for (let j = 0; j < trackSamples.length; j++) {
+    const sampleT = j / 200;
+    if (Math.abs(sampleT - t) < 0.05) continue; // skip nearby points on same section
+    const sp = trackSamples[j];
+    const dx = sp.x - pos.x, dz = sp.z - pos.z;
+    if (dx * dx + dz * dz < 25 && sp.y > groundY + 2 && sp.y < pos.y - 1) {
+      blocked = true;
+      break;
+    }
+  }
+
+  if (height < 2.5 || blocked) {
     _m4.compose(new THREE.Vector3(0, -1000, 0), _pillarQ, new THREE.Vector3(0.001, 0.001, 0.001));
   } else {
     const center = new THREE.Vector3(pos.x, groundY + height / 2, pos.z);
@@ -638,18 +981,20 @@ for (let i = 0; i < treeCount; i++) {
   const z = Math.sin(angle) * dist;
   const scale = 0.6 + rand() * 1.0;
   const colIdx = Math.floor(rand() * treeColors.length);
+  const hide = nearTrack(x, z, 6);
 
   _m4.compose(
-    new THREE.Vector3(x, -2 + 2 * scale, z),
+    hide ? new THREE.Vector3(0, -1000, 0) : new THREE.Vector3(x, -2 + 2 * scale, z),
     new THREE.Quaternion(),
-    new THREE.Vector3(scale * 0.8, scale, scale * 0.8)
+    hide ? new THREE.Vector3(0.001, 0.001, 0.001) : new THREE.Vector3(scale * 0.8, scale, scale * 0.8)
   );
   trunksMesh.setMatrixAt(i, _m4);
 
+  const fYScale = scale * (0.8 + rand() * 0.4);
   _m4.compose(
-    new THREE.Vector3(x, -2 + 4 * scale + 2.5 * scale, z),
+    hide ? new THREE.Vector3(0, -1000, 0) : new THREE.Vector3(x, -2 + 4 * scale + 2.5 * scale, z),
     new THREE.Quaternion(),
-    new THREE.Vector3(scale, scale * (0.8 + rand() * 0.4), scale)
+    hide ? new THREE.Vector3(0.001, 0.001, 0.001) : new THREE.Vector3(scale, fYScale, scale)
   );
   foliageMesh.setMatrixAt(i, _m4);
   foliageMesh.setColorAt(i, new THREE.Color(treeColors[colIdx]));
@@ -682,18 +1027,20 @@ for (let i = 0; i < pineCount; i++) {
   const x = Math.cos(angle) * dist;
   const z = Math.sin(angle) * dist;
   const scale = 0.5 + rand() * 0.9;
+  const hide = nearTrack(x, z, 6);
 
   _m4.compose(
-    new THREE.Vector3(x, -2 + 1.5 * scale, z),
+    hide ? new THREE.Vector3(0, -1000, 0) : new THREE.Vector3(x, -2 + 1.5 * scale, z),
     new THREE.Quaternion(),
-    new THREE.Vector3(scale * 0.6, scale, scale * 0.6)
+    hide ? new THREE.Vector3(0.001, 0.001, 0.001) : new THREE.Vector3(scale * 0.6, scale, scale * 0.6)
   );
   pineTrunksMesh.setMatrixAt(i, _m4);
 
+  const fYScale = scale * (0.8 + rand() * 0.4);
   _m4.compose(
-    new THREE.Vector3(x, -2 + 3 * scale + 3.5 * scale, z),
+    hide ? new THREE.Vector3(0, -1000, 0) : new THREE.Vector3(x, -2 + 3 * scale + 3.5 * scale, z),
     new THREE.Quaternion(),
-    new THREE.Vector3(scale, scale * (0.8 + rand() * 0.4), scale)
+    hide ? new THREE.Vector3(0.001, 0.001, 0.001) : new THREE.Vector3(scale, fYScale, scale)
   );
   pineFoliageMesh.setMatrixAt(i, _m4);
   pineFoliageMesh.setColorAt(i, new THREE.Color(pineColors[Math.floor(rand() * pineColors.length)]));
@@ -989,6 +1336,7 @@ updateCameraAtT(0);
 //  SLIDE VISIBILITY (screen overlay)
 // ═══════════════════════════════════
 function showSlide(index) {
+  closeModal();
   slideCards.forEach((card, i) => {
     card.classList.toggle('visible', i === index);
   });
@@ -1003,7 +1351,7 @@ const counterEl = document.getElementById('slide-counter');
 const hintEl = document.getElementById('hint');
 const speedOverlay = document.getElementById('speed-overlay');
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < TOTAL_SLIDES; i++) {
   const dot = document.createElement('div');
   dot.className = 'dot' + (i === 0 ? ' active' : '');
   dot.addEventListener('click', (e) => { e.stopPropagation(); goToSlide(i); });
@@ -1011,7 +1359,7 @@ for (let i = 0; i < 10; i++) {
 }
 
 function updateUI(slideIndex) {
-  counterEl.textContent = `${slideIndex + 1} / 10`;
+  counterEl.textContent = `${slideIndex + 1} / ${TOTAL_SLIDES}`;
   progressEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === slideIndex));
 }
 
@@ -1019,7 +1367,9 @@ function updateUI(slideIndex) {
 //  NAVIGATION
 // ═══════════════════════════════════
 function goToSlide(targetIndex) {
-  if (isAnimating || targetIndex === currentSlide || targetIndex < 0 || targetIndex > 9) return;
+  if (slideCards.length === 0) return;
+  if (isAnimating || targetIndex === currentSlide || targetIndex < 0 || targetIndex > TOTAL_SLIDES - 1) return;
+  closeModal();
   isAnimating = true;
 
   if (hintEl.style.opacity !== '0') {
@@ -1031,14 +1381,14 @@ function goToSlide(targetIndex) {
   const toT = stationTs[targetIndex];
   const movingForward = targetIndex > currentSlide;
   const segIdx = movingForward ? targetIndex : currentSlide;
-  const config = segmentConfig[Math.min(segIdx, 9)];
+  const config = segmentConfig[Math.min(segIdx, TOTAL_SLIDES - 1)];
 
   const dist = Math.abs(toT - fromT);
-  const baseDuration = dist * 12;
-  const duration = Math.max(1.5, Math.min(4.0, baseDuration * config.durationScale));
+  const baseDuration = dist * 15;
+  const duration = Math.max(2.0, Math.min(5.5, baseDuration * config.durationScale));
 
-  const isFast = [2, 6, 8].includes(targetIndex);
-  const isSlow = [1, 5].includes(targetIndex);
+  const isFast = [1, 5].includes(targetIndex);
+  const isSlow = [4].includes(targetIndex);
 
   // Fade out current slide
   showSlide(-1);
@@ -1088,15 +1438,16 @@ function prevSlide() { goToSlide(currentSlide - 1); }
 
 document.getElementById('nav-next').addEventListener('click', (e) => { e.stopPropagation(); nextSlide(); });
 document.getElementById('nav-prev').addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
-document.addEventListener('click', () => nextSlide());
+document.addEventListener('click', () => { if (!modalOpen) nextSlide(); });
 
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalOpen) { closeModal(); return; }
+  if (modalOpen) return;
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); nextSlide(); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
   else if (e.key === 'ArrowUp') { e.preventDefault(); goToSlide(0); }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); goToSlide(9); }
-  else if (e.key >= '1' && e.key <= '9') goToSlide(parseInt(e.key) - 1);
-  else if (e.key === '0') goToSlide(9);
+  else if (e.key === 'ArrowDown') { e.preventDefault(); goToSlide(TOTAL_SLIDES - 1); }
+  else if (e.key >= '1' && e.key <= String(TOTAL_SLIDES)) goToSlide(parseInt(e.key) - 1);
 });
 
 // ═══════════════════════════════════
