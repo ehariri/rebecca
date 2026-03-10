@@ -306,10 +306,14 @@
     color: rgba(255,255,255,0.7);
     margin-bottom: 24px;
   }
+  .input-wrapper {
+    position: relative;
+    margin-bottom: 14px;
+  }
   #gate-input {
     display: block;
     width: 100%;
-    padding: 14px 18px;
+    padding: 14px 48px 14px 18px;
     font-size: 16px;
     font-family: inherit;
     background: rgba(255,255,255,0.08);
@@ -317,9 +321,23 @@
     border-radius: 12px;
     color: #fff;
     outline: none;
-    margin-bottom: 14px;
     transition: border-color 0.2s;
   }
+  #gate-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  #gate-toggle:hover { color: rgba(255,255,255,0.8); }
   #gate-input::placeholder { color: rgba(255,255,255,0.35); }
   #gate-input:focus { border-color: rgba(255,255,255,0.5); }
   #gate-submit {
@@ -410,7 +428,13 @@
   <div class="gate-card">
     <h2>Liability Loop-de-Loop</h2>
     <p>Enter the password to begin.</p>
-    <input type="password" id="gate-input" placeholder="Password" autofocus>
+    <div class="input-wrapper">
+      <input type="password" id="gate-input" placeholder="Password" autofocus>
+      <button type="button" id="gate-toggle" aria-label="Show password">
+        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+    </div>
     <button id="gate-submit">Enter</button>
     <div id="gate-error"></div>
   </div>
@@ -558,6 +582,17 @@ const gateEl = document.getElementById('password-gate');
 const gateInput = document.getElementById('gate-input');
 const gateSubmit = document.getElementById('gate-submit');
 const gateError = document.getElementById('gate-error');
+const gateToggle = document.getElementById('gate-toggle');
+const eyeOpen = document.getElementById('eye-open');
+const eyeClosed = document.getElementById('eye-closed');
+
+gateToggle.addEventListener('click', () => {
+  const showing = gateInput.type === 'text';
+  gateInput.type = showing ? 'password' : 'text';
+  eyeOpen.style.display = showing ? '' : 'none';
+  eyeClosed.style.display = showing ? 'none' : '';
+  gateInput.focus();
+});
 
 async function attemptUnlock() {
   const password = gateInput.value;
@@ -565,18 +600,20 @@ async function attemptUnlock() {
   gateError.textContent = '';
   gateSubmit.disabled = true;
   gateSubmit.textContent = 'Decrypting…';
+  let slides;
   try {
-    const slides = await decryptSlides(password);
-    gateEl.classList.add('hidden');
-    setTimeout(() => { gateEl.style.display = 'none'; }, 500);
-    initPresentation(slides);
+    slides = await decryptSlides(password);
   } catch (e) {
     gateError.textContent = 'Incorrect password';
     gateSubmit.disabled = false;
     gateSubmit.textContent = 'Enter';
     gateInput.focus();
     gateInput.select();
+    return;
   }
+  gateEl.classList.add('hidden');
+  setTimeout(() => { gateEl.style.display = 'none'; }, 500);
+  initPresentation(slides);
 }
 
 gateEl.addEventListener('click', (e) => e.stopPropagation());
