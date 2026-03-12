@@ -7,6 +7,7 @@
     "encrypt": "node encrypt.js"
   },
   "dependencies": {
+    "dotenv": "^17.3.1",
     "express": "^4.22.1",
     "express-rate-limit": "^7.5.1"
   }
